@@ -1,37 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      liff.init({ liffId: '2007879229-w3ZOJvm6' }).then(() => {
-        if (!liff.isLoggedIn()) {
-          liff.login();
-        } else {
-          liff.getProfile().then(profile => {
-            const userId = profile.userId;
-            fetch('GASのWebアプリURL?userId=' + userId)
-              .then(res => res.json())
-              .then(data => {
-                if (data.showForm) {
-                  document.getElementById('formContainer').style.display = 'block';
-                }
-              });
-          });
-        }
-      });
-    });
-  </script>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会員情報フォーム</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" crossorigin="anonymous">
 </head>
 <body>
-  <div id="formContainer" style="display:none;">
-    <form id="userForm">
-      <label>性別：<input name="gender" /></label><br>
-      <label>年代：<input name="age_range" /></label><br>
-      <label>居住エリア：<input name="area" /></label><br>
-      <label><input type="checkbox" name="agree" required /> 利用に同意する</label><br>
-      <button type="submit">登録</button>
+    <p class="text-center">【会員情報フォーム】</p>
+    <p class="text-center">以下の項目を入力してください</p>
+    <form class="w-75 mx-auto" id="memberForm">
+        <p class="mt-3">氏名</p>
+        <div>
+            <input class="form-control w-100 mt-1" name="name" required>
+        </div>
+        <p class="mt-3">生年月日</p>
+        <div class="form-row">
+            <div class="col">
+                <select class="form-control" name="birthYear" required>
+                    <option value="" disabled selected>年</option>
+                    <!-- 1900年から今年までの年を追加 -->
+                    <script>
+                        const yearSelect = document.querySelector('select[name="birthYear"]');
+                        const currentYear = new Date().getFullYear();
+                        for (let year = currentYear; year >= 1900; year--) {
+                            yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+                        }
+                    </script>
+                </select>
+            </div>
+            <div class="col">
+                <select class="form-control" name="birthMonth" required>
+                    <option value="" disabled selected>月</option>
+                    <!-- 1月から12月までの月を追加 -->
+                    <script>
+                        const monthSelect = document.querySelector('select[name="birthMonth"]');
+                        for (let month = 1; month <= 12; month++) {
+                            monthSelect.innerHTML += `<option value="${month}">${month}</option>`;
+                        }
+                    </script>
+                </select>
+            </div>
+            <div class="col">
+                <select class="form-control" name="birthDay" required>
+                    <option value="" disabled selected>日</option>
+                    <!-- 1日から31日までの日を追加 -->
+                    <script>
+                        const daySelect = document.querySelector('select[name="birthDay"]');
+                        for (let day = 1; day <= 31; day++) {
+                            daySelect.innerHTML += `<option value="${day}">${day}</option>`;
+                        }
+                    </script>
+                </select>
+            </div>
+        </div>
+        <input type="submit" class="mt-4 btn btn-primary" value="送信">
     </form>
-  </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <script>
+        $(document).ready(function () {
+            const liffId = "2007879229-w3ZOJvm6";
+            initializeLiff(liffId);
+        });
+
+        function initializeLiff(liffId) {
+            liff.init({
+                liffId: liffId
+            }).then(() => {
+                console.log("LIFF initialization succeeded");
+            }).catch((err) => {
+                console.error('LIFF Initialization failed ', err);
+            });
+        }
+
+        function sendText(text) {
+            liff.sendMessages([{
+                'type': 'text',
+                'text': text
+            }]).then(function () {
+                console.log("Message sent: ", text);
+                liff.closeWindow();
+            }).catch(function (error) {
+                console.error('Failed to send message', error);
+                window.alert('Failed to send message ' + error);
+            });
+        }
+
+        $('#memberForm').submit(function (event) {
+            event.preventDefault(); // フォームのデフォルト送信を防ぐ
+
+            const name = $('input[name="name"]').val();
+            const birthYear = $('select[name="birthYear"]').val();
+            const birthMonth = $('select[name="birthMonth"]').val();
+            const birthDay = $('select[name="birthDay"]').val();
+
+            const msg = `${name},${birthYear},${birthMonth},${birthDay}`;
+            console.log("Sending message: " + msg); // Log the message
+            sendText(msg);
+        });
+    </script>
 </body>
 </html>
