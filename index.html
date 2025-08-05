@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会員情報フォーム</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" crossorigin="anonymous">
+</head>
+<body>
+  <p class="text-center mt-4">【会員情報フォーム】</p>
+  <p class="text-center">以下の項目を入力してください</p>
+  <form class="w-75 mx-auto" id="memberForm">
+    <p class="mt-3">氏名</p>
+    <input class="form-control" name="name" required>
+
+    <p class="mt-3">生年月日</p>
+    <div class="form-row">
+      <div class="col">
+        <select class="form-control" name="birthYear" required>
+          <option value="" disabled selected>年</option>
+        </select>
+      </div>
+      <div class="col">
+        <select class="form-control" name="birthMonth" required>
+          <option value="" disabled selected>月</option>
+        </select>
+      </div>
+      <div class="col">
+        <select class="form-control" name="birthDay" required>
+          <option value="" disabled selected>日</option>
+        </select>
+      </div>
+    </div>
+    <input type="submit" class="mt-4 btn btn-primary" value="送信">
+  </form>
+
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js" charset="utf-8"></script>
+  <script>
+    $(document).ready(function () {
+      const liffId = "2007879229-w3ZOJvm6";
+      initializeLiff(liffId);
+      populateDateFields();
+    });
+
+    function initializeLiff(liffId) {
+      liff.init({ liffId: liffId })
+        .then(() => {
+          console.log("LIFF initialization succeeded");
+        })
+        .catch((err) => {
+          console.error('LIFF Initialization failed', err);
+        });
+    }
+
+    function populateDateFields() {
+      const currentYear = new Date().getFullYear();
+      const yearSelect = document.querySelector('select[name="birthYear"]');
+      const monthSelect = document.querySelector('select[name="birthMonth"]');
+      const daySelect = document.querySelector('select[name="birthDay"]');
+
+      for (let year = currentYear; year >= 1900; year--) {
+        yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+      }
+      for (let month = 1; month <= 12; month++) {
+        monthSelect.innerHTML += `<option value="${month}">${month}</option>`;
+      }
+      for (let day = 1; day <= 31; day++) {
+        daySelect.innerHTML += `<option value="${day}">${day}</option>`;
+      }
+    }
+
+    function sendText(text) {
+      liff.sendMessages([
+        {
+          type: 'text',
+          text: text
+        }
+      ])
+      .then(() => {
+        console.log("Message sent: " + text);
+        liff.closeWindow();
+      })
+      .catch((error) => {
+        console.error('Failed to send message', error);
+        window.alert('Failed to send message: ' + error);
+      });
+    }
+
+    $('#memberForm').submit(function (event) {
+      event.preventDefault();
+
+      const name = $('input[name="name"]').val();
+      const birthYear = $('select[name="birthYear"]').val();
+      const birthMonth = $('select[name="birthMonth"]').val();
+      const birthDay = $('select[name="birthDay"]').val();
+
+      const msg = `${name},${birthYear},${birthMonth},${birthDay}`;
+      console.log("Sending message: " + msg);
+      sendText(msg);
+    });
+  </script>
+</body>
+</html>
