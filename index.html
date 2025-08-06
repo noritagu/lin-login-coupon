@@ -5,44 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ご登録フォーム</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" crossorigin="anonymous" />
+  <style>
+    #memberForm { display: none; }
+  </style>
 </head>
 <body>
-  <div id="formSection" style="display:none;">
-    <p class="text-center mt-3">【ご登録フォーム】</p>
-    <form class="w-75 mx-auto" id="memberForm">
-      <p class="mt-3">性別</p>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="gender" id="male" value="男性" required />
-        <label class="form-check-label" for="male">男性</label>
-      </div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="gender" id="female" value="女性" />
-        <label class="form-check-label" for="female">女性</label>
-      </div>
+  <p class="text-center mt-3">【ご登録フォーム】</p>
+  <form class="w-75 mx-auto" id="memberForm">
+    <!-- 性別 -->
+    <p class="mt-3">性別</p>
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="gender" id="male" value="男性" required />
+      <label class="form-check-label" for="male">男性</label>
+    </div>
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="gender" id="female" value="女性" />
+      <label class="form-check-label" for="female">女性</label>
+    </div>
 
-      <p class="mt-3">年代</p>
-      <select class="form-control" name="generation" id="generationSelect" required>
-        <option value="" disabled selected>選択してください</option>
-      </select>
+    <!-- 年代 -->
+    <p class="mt-3">年代</p>
+    <select class="form-control" name="generation" id="generationSelect" required>
+      <option value="" disabled selected>選択してください</option>
+    </select>
 
-      <p class="mt-3">エリア</p>
-      <select class="form-control" name="area" id="areaSelect" required>
-        <option value="" disabled selected>選択してください</option>
-      </select>
+    <!-- エリア -->
+    <p class="mt-3">エリア</p>
+    <select class="form-control" name="area" id="areaSelect" required>
+      <option value="" disabled selected>選択してください</option>
+    </select>
 
-      <input type="submit" class="btn btn-primary mt-4" value="送信" />
-    </form>
-  </div>
+    <!-- 送信ボタン -->
+    <input type="submit" class="btn btn-primary mt-4" value="送信" />
+  </form>
 
   <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 
   <script>
-    const liffId = "2007879229-w3ZOJvm6";
-    const gasApiUrl = "https://script.google.com/macros/s/XXXXXXXXXXX/exec"; // GASで用意したユーザー存在確認API
-    const gasPostUrl = "https://script.google.com/macros/s/YYYYYYYYYYY/exec"; // GASのPOST登録先
+    const liffId = "2007879229-w3ZOJvm6"; // 実際のLIFF ID
+    const scriptEndpoint = "https://script.google.com/macros/s/AKfycbySUAiSOrWp964fhslT3dejPekpODSbHTxN21ALekku9YQUAIo6vdndq_rdv3238z8bFQ/exec";
+    const lineTalkUrl = "https://line.me/R/ti/p/YOUR_LINE_ID"; // 公式アカウントのトークURLに置き換える
 
-    const populateDropdowns = () => {
+    // 年代と都道府県のリストを動的に追加
+    window.addEventListener('DOMContentLoaded', () => {
       const generationSelect = document.getElementById('generationSelect');
       const areaSelect = document.getElementById('areaSelect');
 
@@ -70,70 +76,67 @@
         option.textContent = pref;
         areaSelect.appendChild(option);
       });
-    };
+    });
 
-    const checkUserExists = async (lineId) => {
-      const res = await fetch(`${gasApiUrl}?line_id=${lineId}`);
-      const json = await res.json();
-      return json.exists;
-    };
-
-    const registerUserToSheet = (data) => {
-      fetch(gasPostUrl, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(data),
-      });
-    };
-
-    const sendTextToLine = (text) => {
-      liff.sendMessages([{ type: 'text', text }])
-        .then(() => liff.closeWindow())
-        .catch(err => {
-          console.error("LINE送信失敗", err);
-          alert("LINE送信失敗: " + err);
-        });
-    };
-
+    // LIFF初期化と処理分岐
     window.onload = async () => {
-      await liff.init({ liffId });
+      try {
+        await liff.init({ liffId });
+        if (!liff.isLoggedIn()) {
+          liff.login({ botPrompt: 'aggressive' });
+          return;
+        }
 
-      if (!liff.isLoggedIn()) {
-        liff.login({ botPrompt: 'normal' }); // ← 友だち追加
-        return;
-      }
+        const profile = await liff.getProfile();
+        const userId = profile.userId;
+        const displayName = profile.displayName;
+        const userAgent = navigator.userAgent;
+        const timestamp = new Date().toISOString();
 
-      const profile = await liff.getProfile();
-      const lineId = profile.userId;
-      const displayName = profile.displayName;
+        // 登録チェック
+        const res = await fetch(`${scriptEndpoint}?userId=${userId}`);
+        const result = await res.json();
 
-      const exists = await checkUserExists(lineId);
+        if (result.registered) {
+          liff.openWindow({ url: lineTalkUrl, external: true });
+        } else {
+          document.getElementById("memberForm").style.display = "block";
 
-      if (exists) {
-        liff.openWindow({ url: "https://line.me/R/oaMessage/@xxxxxxx", external: true });
-      } else {
-        populateDropdowns();
-        document.getElementById("formSection").style.display = "block";
+          // フォーム送信イベント
+          document.getElementById('memberForm').addEventListener('submit', e => {
+            e.preventDefault();
 
-        document.getElementById('memberForm').addEventListener('submit', e => {
-          e.preventDefault();
+            const gender = document.querySelector('input[name="gender"]:checked')?.value;
+            const generation = document.querySelector('select[name="generation"]').value;
+            const area = document.querySelector('select[name="area"]').value;
 
-          const gender = document.querySelector('input[name="gender"]:checked')?.value;
-          const generation = document.getElementById('generationSelect').value;
-          const area = document.getElementById('areaSelect').value;
+            const formData = {
+              userId,
+              displayName,
+              userAgent,
+              timestamp,
+              gender,
+              generation,
+              area
+            };
 
-          const formData = {
-            line_user_id: lineId,
-            display_name: displayName,
-            gender,
-            age_range: generation,
-            area
-          };
-
-          registerUserToSheet(formData);
-          sendTextToLine(`${displayName}さん、登録ありがとうございます！`);
-        });
+            // Google Apps Scriptへ送信
+            fetch(scriptEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams(formData),
+            })
+            .then(() => {
+              liff.sendMessages([{ type: 'text', text: `${displayName}さんの登録が完了しました。` }])
+                .then(() => liff.closeWindow())
+                .catch(err => alert("LINE送信失敗: " + err));
+            })
+            .catch(err => alert("登録失敗: " + err));
+          });
+        }
+      } catch (error) {
+        console.error("LIFF初期化エラー", error);
+        alert("LIFF初期化に失敗しました");
       }
     };
   </script>
