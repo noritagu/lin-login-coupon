@@ -5,88 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ご登録フォーム</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" crossorigin="anonymous" />
-  <style>
-    /* フォーム全体を中央に配置するためのスタイル */
-    .container {
-      max-width: 600px;
-    }
-  </style>
 </head>
 <body>
-  <div class="container d-none">
+  <div id="formSection" style="display:none;">
     <p class="text-center mt-3">【ご登録フォーム】</p>
-    <form id="memberForm">
-      <div class="form-group">
-        <p class="mt-3">性別</p>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="gender" id="male" value="男性" required />
-          <label class="form-check-label" for="male">男性</label>
-        </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="gender" id="female" value="女性" />
-          <label class="form-check-label" for="female">女性</label>
-        </div>
+    <form class="w-75 mx-auto" id="memberForm">
+      <p class="mt-3">性別</p>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="gender" id="male" value="男性" required />
+        <label class="form-check-label" for="male">男性</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="gender" id="female" value="女性" />
+        <label class="form-check-label" for="female">女性</label>
       </div>
 
-      <div class="form-group">
-        <p class="mt-3">年代</p>
-        <select class="form-control" name="generation" id="generationSelect" required>
-          <option value="" disabled selected>選択してください</option>
-        </select>
-      </div>
+      <p class="mt-3">年代</p>
+      <select class="form-control" name="generation" id="generationSelect" required>
+        <option value="" disabled selected>選択してください</option>
+      </select>
 
-      <div class="form-group">
-        <p class="mt-3">エリア</p>
-        <select class="form-control" name="area" id="areaSelect" required>
-          <option value="" disabled selected>選択してください</option>
-        </select>
-      </div>
+      <p class="mt-3">エリア</p>
+      <select class="form-control" name="area" id="areaSelect" required>
+        <option value="" disabled selected>選択してください</option>
+      </select>
 
-      <input type="submit" class="btn btn-primary mt-4 w-100" value="送信" />
+      <input type="submit" class="btn btn-primary mt-4" value="送信" />
     </form>
   </div>
 
-  <div id="loading" class="d-flex justify-content-center align-items-center" style="height: 100vh;">
-    <div class="spinner-border" role="status">
-      <span class="sr-only">Loading...</span>
-    </div>
-  </div>
-
+  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 
   <script>
-    // LIFF IDとGoogle Apps ScriptのURLを定数で定義
-    const LIFF_ID = "2007879229-w3ZOJvm6";
-    const SPREADSHEET_URL = 'https://script.google.com/macros/s/AKfycbySUAiSOrWp964fhslT3dejPekpODSbHTxN21ALekku9YQUAIo6vdndq_rdv3238z8bFQ/exec';
+    const liffId = "2007879229-w3ZOJvm6";
+    const gasApiUrl = "https://script.google.com/macros/s/XXXXXXXXXXX/exec"; // GASで用意したユーザー存在確認API
+    const gasPostUrl = "https://script.google.com/macros/s/YYYYYYYYYYY/exec"; // GASのPOST登録先
 
-    // DOM要素の取得
-    const formContainer = document.querySelector('.container');
-    const memberForm = document.getElementById('memberForm');
-    const submitButton = document.querySelector('input[type="submit"]');
-    const generationSelect = document.getElementById('generationSelect');
-    const areaSelect = document.getElementById('areaSelect');
-    const loadingSpinner = document.getElementById('loading');
+    const populateDropdowns = () => {
+      const generationSelect = document.getElementById('generationSelect');
+      const areaSelect = document.getElementById('areaSelect');
 
-    // ドロップダウンリストの内容を動的に追加
-    function populateSelects() {
-      const generations = [10, 20, 30, 40, 50, 60, 70, 80, 90];
-      const prefectures = [
-        "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
-        "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
-        "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県",
-        "岐阜県", "静岡県", "愛知県", "三重県",
-        "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県",
-        "鳥取県", "島根県", "岡山県", "広島県", "山口県",
-        "徳島県", "香川県", "愛媛県", "高知県",
-        "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"
-      ];
-
-      generations.forEach(gen => {
+      [10, 20, 30, 40, 50, 60, 70, 80, 90].forEach(gen => {
         const option = document.createElement('option');
         option.value = `${gen}代`;
         option.textContent = `${gen}代`;
         generationSelect.appendChild(option);
       });
+
+      const prefectures = [
+        "北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県",
+        "茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県",
+        "新潟県","富山県","石川県","福井県","山梨県","長野県",
+        "岐阜県","静岡県","愛知県","三重県",
+        "滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県",
+        "鳥取県","島根県","岡山県","広島県","山口県",
+        "徳島県","香川県","愛媛県","高知県",
+        "福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"
+      ];
 
       prefectures.forEach(pref => {
         const option = document.createElement('option');
@@ -94,98 +70,72 @@
         option.textContent = pref;
         areaSelect.appendChild(option);
       });
-    }
-
-    // LIFF初期化と処理
-    window.onload = async () => {
-      try {
-        await liff.init({ liffId: LIFF_ID });
-
-        if (!liff.isLoggedIn()) {
-          // 未ログインの場合、ログインと友だち追加を促す
-          liff.login({ botPrompt: 'normal' });
-          return;
-        }
-
-        const profile = await liff.getProfile();
-        const userId = profile.userId;
-
-        // 友だち登録状況とスプレッドシート登録状況をチェック
-        const [friendshipStatus, registrationStatus] = await Promise.all([
-          liff.getFriendship(),
-          checkUserRegistration(userId)
-        ]);
-        
-        loadingSpinner.classList.add('d-none'); // ローディングを非表示にする
-
-        if (friendshipStatus.friendFlag && registrationStatus.isRegistered) {
-          // 友だち登録済み かつ スプレッドシート登録済みの場合
-          // LIFFを閉じてトーク画面に戻る
-          liff.closeWindow();
-        } else {
-          // それ以外の場合（未登録 or 友だち登録していない）
-          // フォームを表示し、ドロップダウンを生成
-          populateSelects();
-          formContainer.classList.remove('d-none');
-        }
-
-      } catch (error) {
-        console.error("LIFF/API Error", error);
-        alert(`エラーが発生しました: ${error.message}`);
-        loadingSpinner.classList.add('d-none');
-      }
     };
 
-    // ユーザーの登録状況をGASに問い合わせる関数
-    async function checkUserRegistration(userId) {
-      const res = await fetch(`${SPREADSHEET_URL}?action=checkUser&line_user_id=${userId}`);
-      return await res.json();
-    }
+    const checkUserExists = async (lineId) => {
+      const res = await fetch(`${gasApiUrl}?line_id=${lineId}`);
+      const json = await res.json();
+      return json.exists;
+    };
 
-    // フォーム送信時の処理
-    memberForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const registerUserToSheet = (data) => {
+      fetch(gasPostUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(data),
+      });
+    };
 
-      // 送信ボタンを無効化
-      submitButton.disabled = true;
-      submitButton.value = '送信中...';
-
-      try {
-        const profile = await liff.getProfile();
-        const userId = profile.userId;
-        const displayName = profile.displayName;
-        const userAgent = navigator.userAgent;
-        const timestamp = new Date().toISOString();
-
-        const formData = {
-          action: 'registerUser',
-          line_user_id: userId,
-          display_name: displayName,
-          user_agent: userAgent,
-          timestamp: timestamp,
-          gender: document.querySelector('input[name="gender"]:checked')?.value,
-          generation: generationSelect.value,
-          area: areaSelect.value,
-        };
-
-        // Google Apps Scriptへデータを送信
-        const res = await fetch(SPREADSHEET_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams(formData)
+    const sendTextToLine = (text) => {
+      liff.sendMessages([{ type: 'text', text }])
+        .then(() => liff.closeWindow())
+        .catch(err => {
+          console.error("LINE送信失敗", err);
+          alert("LINE送信失敗: " + err);
         });
+    };
 
-        // 登録完了メッセージを送信してLIFFを閉じる
-        await liff.sendMessages([{ type: 'text', text: 'ご登録ありがとうございます！' }]);
-        liff.closeWindow();
+    window.onload = async () => {
+      await liff.init({ liffId });
 
-      } catch (error) {
-        console.error("データ送信失敗", error);
-        alert('登録に失敗しました。時間をおいて再度お試しください。');
-        submitButton.disabled = false;
-        submitButton.value = '送信';
+      if (!liff.isLoggedIn()) {
+        liff.login({ botPrompt: 'normal' }); // ← 友だち追加
+        return;
       }
-    });
+
+      const profile = await liff.getProfile();
+      const lineId = profile.userId;
+      const displayName = profile.displayName;
+
+      const exists = await checkUserExists(lineId);
+
+      if (exists) {
+        liff.openWindow({ url: "https://line.me/R/oaMessage/@xxxxxxx", external: true });
+      } else {
+        populateDropdowns();
+        document.getElementById("formSection").style.display = "block";
+
+        document.getElementById('memberForm').addEventListener('submit', e => {
+          e.preventDefault();
+
+          const gender = document.querySelector('input[name="gender"]:checked')?.value;
+          const generation = document.getElementById('generationSelect').value;
+          const area = document.getElementById('areaSelect').value;
+
+          const formData = {
+            line_user_id: lineId,
+            display_name: displayName,
+            gender,
+            age_range: generation,
+            area
+          };
+
+          registerUserToSheet(formData);
+          sendTextToLine(`${displayName}さん、登録ありがとうございます！`);
+        });
+      }
+    };
   </script>
 </body>
 </html>
